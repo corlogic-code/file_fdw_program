@@ -19,6 +19,12 @@ PG94 = $(shell $(PG_CONFIG) --version | egrep " 8\.| 9\.0| 9\.1| 9\.2| 9\.3" > /
 ifeq ($(PG96),yes)
 	PG_CPPFLAGS+=-DV96
 endif
+ifeq ($(PG95),yes)
+	PG_CPPFLAGS+=-DV95
+endif
+ifeq ($(PG94),yes)
+	PG_CPPFLAGS+=-DV94
+endif
 
 ifeq ($(PG94),no)
 $(error Minimum version of PostgreSQL requires is 9.4.0)

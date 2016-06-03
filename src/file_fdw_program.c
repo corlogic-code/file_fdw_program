@@ -35,7 +35,9 @@
 #include "optimizer/var.h"
 #include "utils/memutils.h"
 #include "utils/rel.h"
+#ifdef V95
 #include "utils/sampling.h"
+#endif
 
 PG_MODULE_MAGIC;
 
@@ -120,6 +122,7 @@ static void fileGetForeignRelSize(PlannerInfo *root,
 static void fileGetForeignPaths(PlannerInfo *root,
 					RelOptInfo *baserel,
 					Oid foreigntableid);
+#ifdef V95
 static ForeignScan *fileGetForeignPlan(PlannerInfo *root,
 				   RelOptInfo *baserel,
 				   Oid foreigntableid,
@@ -127,6 +130,15 @@ static ForeignScan *fileGetForeignPlan(PlannerInfo *root,
 				   List *tlist,
 				   List *scan_clauses,
 				   Plan *outer_plan);
+#else
+static ForeignScan *fileGetForeignPlan(PlannerInfo *root,
+                   RelOptInfo *baserel,
+                   Oid foreigntableid,
+                   ForeignPath *best_path,
+                   List *tlist,
+                   List *scan_clauses);
+#endif
+
 static void fileExplainForeignScan(ForeignScanState *node, ExplainState *es);
 static void fileBeginForeignScan(ForeignScanState *node, int eflags);
 static TupleTableSlot *fileIterateForeignScan(ForeignScanState *node);
@@ -571,7 +583,9 @@ fileGetForeignPaths(PlannerInfo *root,
 									 total_cost,
 									 NIL,		/* no pathkeys */
 									 NULL,		/* no outer rel either */
+#ifdef V95
 									 NULL,		/* no extra plan */
+#endif
 									 coptions));
 
 	/*
@@ -591,8 +605,12 @@ fileGetForeignPlan(PlannerInfo *root,
 				   Oid foreigntableid,
 				   ForeignPath *best_path,
 				   List *tlist,
+#ifdef V95
 				   List *scan_clauses,
-				   Plan *outer_plan)
+				   Plan *outer_plan
+#else
+				   List *scan_clauses)
+#endif
 {
 	Index		scan_relid = baserel->relid;
 
@@ -610,10 +628,15 @@ fileGetForeignPlan(PlannerInfo *root,
 							scan_clauses,
 							scan_relid,
 							NIL,	/* no expressions to evaluate */
+#ifdef V95
 							best_path->fdw_private,
 							NIL,	/* no custom tlist */
 							NIL,	/* no remote quals */
 							outer_plan);
+#else
+							best_path->fdw_private);
+#endif
+
 }
 
 /*
@@ -1036,9 +1059,12 @@ estimate_size(PlannerInfo *root, RelOptInfo *baserel,
 #ifdef V96
 		tuple_width = MAXALIGN(baserel->reltarget->width) +
 			MAXALIGN(SizeofHeapTupleHeader);
-#else
+#elif V95
         tuple_width = MAXALIGN(baserel->width) +
             MAXALIGN(SizeofHeapTupleHeader);
+#else
+        tuple_width = MAXALIGN(baserel->width) +
+            MAXALIGN(sizeof(HeapTupleHeaderData));
 #endif
 		ntuples = clamp_row_est((double) stat_buf.st_size /
 								(double) tuple_width);
@@ -1112,7 +1138,11 @@ file_acquire_sample_rows(Relation onerel, int elevel,
 {
 	int			numrows = 0;
 	double		rowstoskip = -1;	/* -1 means not set yet */
+#ifdef V95
 	ReservoirStateData rstate;
+#else
+    double      rstate;
+#endif
 	TupleDesc	tupDesc;
 	Datum	   *values;
 	bool	   *nulls;
@@ -1154,7 +1184,11 @@ file_acquire_sample_rows(Relation onerel, int elevel,
 									   ALLOCSET_DEFAULT_MAXSIZE);
 
 	/* Prepare for sampling rows */
+#ifdef V95
 	reservoir_init_selection_state(&rstate, targrows);
+#else
+    rstate = anl_init_selection_state(targrows);
+#endif
 
 	/* Set up callback to identify error line number. */
 	errcallback.callback = CopyFromErrorCallback;
@@ -1198,7 +1232,11 @@ file_acquire_sample_rows(Relation onerel, int elevel,
 			 * not-yet-incremented value of totalrows as t.
 			 */
 			if (rowstoskip < 0)
+#ifdef V95
 				rowstoskip = reservoir_get_next_S(&rstate, *totalrows, targrows);
+#else
+                rowstoskip = anl_get_next_S(*totalrows, targrows, &rstate);
+#endif
 
 			if (rowstoskip <= 0)
 			{
@@ -1206,7 +1244,11 @@ file_acquire_sample_rows(Relation onerel, int elevel,
 				 * Found a suitable tuple, so save it, replacing one old tuple
 				 * at random
 				 */
+#ifdef V95
 				int			k = (int) (targrows * sampler_random_fract(rstate.randstate));
+#else
+                int         k = (int) (targrows * anl_random_fract());
+#endif
 
 				Assert(k >= 0 && k < targrows);
 				heap_freetuple(rows[k]);

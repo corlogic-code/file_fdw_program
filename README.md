@@ -11,7 +11,7 @@ For function documentation and examples, see the [file_fdw_program.md file](doc/
 
 ## INSTALLATION
 
-Requirements: PostgreSQL 9.2 or greater.
+Requirements: PostgreSQL 9.4 or greater.
 
 In the directory where you downloaded file_fdw_program, run
 
