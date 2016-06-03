@@ -1,0 +1,43 @@
+{
+    "name": "file_fdw_program",
+    "abstract": "backport of PROGRAM option for file_fdw",
+    "description": "backport of PROGRAM option for file_fdw",
+    "version": "1.0.0",
+    "maintainer": [ "Corey Huinker <corey.huinker@moat.com>" ],
+    "license": "postgresql",
+    "generated_by": "Corey Huinker",
+    "provides": {
+        "file_fdw_program": {
+            "abstract": "backport of PROGRAM option for file_fdw"
+            "file": "sql/file_fdw_program.sql",
+            "docfile": "doc/file_fdw_program.md",
+            "version": "1.0.0"
+        }
+    },
+    "release_status": "stable",
+    "prereqs": {
+        "runtime": {
+            "requires": {
+                "PostgreSQL": "9.4.0"
+            }
+        }
+    },
+    "resources": {
+        "bugtracker": {
+            "web": "https://github.com/moat/file_fdw_program/issues"
+        },
+        "repository": {
+            "url": "git://github.com/moat/file_fdw_program.git" ,
+            "web": "https://github.com/moat/file_fdw_program",
+            "type": "git"
+        }
+    },    
+    "meta-spec": {
+        "version": "1.0.0",
+        "url": "http://pgxn.org/meta/spec.txt"
+    },
+    "tags": [
+        "parallel",
+        "meta"
+        ]
+}
