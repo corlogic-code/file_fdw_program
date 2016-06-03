@@ -607,7 +607,7 @@ fileGetForeignPlan(PlannerInfo *root,
 				   List *tlist,
 #ifdef V95
 				   List *scan_clauses,
-				   Plan *outer_plan
+				   Plan *outer_plan)
 #else
 				   List *scan_clauses)
 #endif
